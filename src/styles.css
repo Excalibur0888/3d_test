@@ -85,16 +85,26 @@ work-zone {
 /* Стили для полигонов */
 .polygon {
     cursor: move;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, transform 0.1s;
 }
 
 .polygon:hover {
     opacity: 0.8;
+    filter: brightness(1.1);
 }
 
 .polygon.dragging {
     opacity: 0.6;
     pointer-events: none;
+}
+
+/* Стили для полигонов в рабочей области */
+work-zone .polygon {
+    cursor: grab;
+}
+
+work-zone .polygon:active {
+    cursor: grabbing;
 }
 
 .polygon-wrapper {

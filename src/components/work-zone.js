@@ -93,13 +93,14 @@ class WorkZone extends HTMLElement {
             this.drawAxes();
         });
 
-        // Панорамирование
+        // Панорамирование - только при клике на фоне или с зажатым Ctrl
         this.container.addEventListener('mousedown', (e) => {
-            if (e.button === 0) { // ЛКМ
+            if (e.button === 0 && (e.target === this.svg || e.target === this.container || e.ctrlKey)) {
                 this.isPanning = true;
                 this.lastPanX = e.clientX;
                 this.lastPanY = e.clientY;
                 this.container.style.cursor = 'grabbing';
+                e.preventDefault();
             }
         });
 
@@ -147,10 +148,11 @@ class WorkZone extends HTMLElement {
             
             if (sourceZone === 'buffer-zone' && polygonId) {
                 const rect = this.container.getBoundingClientRect();
+                // Исправляем координаты с учетом масштаба и offset
                 const dropX = (e.clientX - rect.left - this.offsetX) / this.scale;
                 const dropY = (e.clientY - rect.top - this.offsetY) / this.scale;
                 
-                this.handlePolygonDrop(polygonId, dropX, dropY);
+                this.handlePolygonDrop(polygonId, dropX - 60, dropY - 60); // Центрируем полигон
             }
         });
     }
@@ -278,7 +280,14 @@ class WorkZone extends HTMLElement {
 
     makeDraggable(element, polygonData) {
         element.setAttribute('draggable', 'true');
+        element.style.cursor = 'move';
         
+        // Переменные для внутреннего перетаскивания
+        let isDragging = false;
+        let startX, startY;
+        let initialTransform = { x: polygonData.x, y: polygonData.y };
+        
+        // Drag & Drop между зонами
         element.addEventListener('dragstart', (e) => {
             e.dataTransfer.setData('text/plain', polygonData.id);
             e.dataTransfer.setData('source', 'work-zone');
@@ -287,6 +296,49 @@ class WorkZone extends HTMLElement {
 
         element.addEventListener('dragend', (e) => {
             element.classList.remove('dragging');
+        });
+        
+        // Внутреннее перетаскивание мышью
+        element.addEventListener('mousedown', (e) => {
+            // Предотвращаем conflict с панорамированием
+            if (e.button === 0 && !e.ctrlKey) {
+                e.stopPropagation(); // Останавливаем всплытие события
+                isDragging = true;
+                
+                const rect = this.container.getBoundingClientRect();
+                startX = (e.clientX - rect.left - this.offsetX) / this.scale;
+                startY = (e.clientY - rect.top - this.offsetY) / this.scale;
+                initialTransform = { x: polygonData.x, y: polygonData.y };
+                
+                element.style.opacity = '0.7';
+                this.container.style.cursor = 'grabbing';
+            }
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                
+                const rect = this.container.getBoundingClientRect();
+                const currentX = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const currentY = (e.clientY - rect.top - this.offsetY) / this.scale;
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                
+                polygonData.x = initialTransform.x + deltaX;
+                polygonData.y = initialTransform.y + deltaY;
+                
+                element.setAttribute('transform', `translate(${polygonData.x}, ${polygonData.y})`);
+            }
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                isDragging = false;
+                element.style.opacity = '1';
+                this.container.style.cursor = 'default';
+            }
         });
     }
 
