@@ -1,10 +1,7 @@
 class PolygonGenerator {
     constructor() {
         this.colors = [
-            '#B91C1C', '#DC2626', '#EF4444', '#F87171',
-            '#7C2D12', '#EA580C', '#F97316', '#FB923C',
-            '#065F46', '#059669', '#10B981', '#34D399',
-            '#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD'
+            '#B91C1C'
         ];
     }
 
